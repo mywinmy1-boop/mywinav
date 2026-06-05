@@ -33,7 +33,7 @@ CAPTION = """🎰 MYWIN 是你最值得信赖的线上娱乐平台
 🇲🇾 MYWIN Malaysia's Most Trusted Online Casino
 💰 RM4,880 Welcome Bonus
 
-👉 PLAY NOW (https://www.mywin.asia/) | BACKUP CHANNEL (https://t.me/mywinmain)"""
+👉 PLAY NOW () | BACKUP CHANNEL (https://t.me/mywinmain)"""
 
 
 bot_album_buffer = {}
