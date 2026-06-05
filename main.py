@@ -4,7 +4,13 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto, InputMediaVideo
+from telegram import (
+    Update,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    InputMediaPhoto,
+    InputMediaVideo,
+)
 from telegram.ext import (
     ApplicationBuilder,
     CommandHandler,
@@ -14,7 +20,7 @@ from telegram.ext import (
     filters,
 )
 
-from telethon import TelegramClient, events
+from telethon import TelegramClient, events, Button
 from telethon.sessions import StringSession
 
 
@@ -31,9 +37,39 @@ CAPTION = """🎰 MYWIN 是你最值得信赖的线上娱乐平台
 🎁 RM4,880 新人优惠等你来领取
 
 🇲🇾 MYWIN Malaysia's Most Trusted Online Casino
-💰 RM4,880 Welcome Bonus
+💰 RM4,880 Welcome Bonus"""
 
-👉 PLAY NOW () | BACKUP CHANNEL (https://t.me/mywinmain)"""
+
+PROMO_BUTTONS_BOT = InlineKeyboardMarkup([
+    [
+        InlineKeyboardButton(
+            "🎁 Claim 388% Bonus",
+            url="https://www.mywin.asia"
+        )
+    ],
+    [
+        InlineKeyboardButton(
+            "💬 WhatsApp Now",
+            url="https://api.whatsapp.com/send/?phone=60178828561&text&type=phone_number&app_absent=0"
+        ),
+        InlineKeyboardButton(
+            "💸 Withdrawal Channel",
+            url="https://t.me/mywinchannel"
+        )
+    ]
+])
+
+
+PROMO_BUTTONS_TELETHON = [
+    [Button.url("🎁 Claim 388% Bonus", "https://www.mywin.asia")],
+    [
+        Button.url(
+            "💬 WhatsApp Now",
+            "https://api.whatsapp.com/send/?phone=60178828561&text&type=phone_number&app_absent=0"
+        ),
+        Button.url("💸 Withdrawal Channel", "https://t.me/mywinchannel")
+    ]
+]
 
 
 bot_album_buffer = {}
@@ -142,6 +178,7 @@ async def text_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     elif mode == "set_sources":
         sources = []
+
         for item in text.replace(",", "\n").splitlines():
             item = item.strip()
             if item:
@@ -180,25 +217,26 @@ async def bot_media_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 
 async def send_single_bot_media(msg, context):
-    config = load_config()
-    destination = config["destination"]
+    destination = load_config()["destination"]
 
     try:
         if msg.photo:
             await context.bot.send_photo(
                 chat_id=destination,
                 photo=msg.photo[-1].file_id,
-                caption=CAPTION
+                caption=CAPTION,
+                reply_markup=PROMO_BUTTONS_BOT
             )
 
         elif msg.video:
             await context.bot.send_video(
                 chat_id=destination,
                 video=msg.video.file_id,
-                caption=CAPTION
+                caption=CAPTION,
+                reply_markup=PROMO_BUTTONS_BOT
             )
 
-        await msg.reply_text("Media copied and sent with MYWIN caption.")
+        await msg.reply_text("Media copied and sent with MYWIN caption + buttons.")
 
     except Exception as e:
         await msg.reply_text(f"Send failed: {e}")
@@ -243,7 +281,15 @@ async def process_bot_album_later(key, context):
                 chat_id=destination,
                 media=media_group
             )
-            await messages[0].reply_text("Grouped media copied and sent with MYWIN caption.")
+
+            await context.bot.send_message(
+                chat_id=destination,
+                text=CAPTION,
+                reply_markup=PROMO_BUTTONS_BOT
+            )
+
+            await messages[0].reply_text("Grouped media copied and sent with buttons.")
+
         except Exception as e:
             await messages[0].reply_text(f"Grouped send failed: {e}")
 
@@ -268,13 +314,13 @@ async def send_single_telethon_media(message):
             destination,
             file_path,
             caption=CAPTION,
+            buttons=PROMO_BUTTONS_TELETHON,
             force_document=False
         )
 
 
 async def send_telethon_album(messages):
     destination = load_config()["destination"]
-
     messages = sorted(messages, key=lambda m: m.id)
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -294,6 +340,12 @@ async def send_telethon_album(messages):
                 force_document=False
             )
 
+            await telethon_client.send_message(
+                destination,
+                CAPTION,
+                buttons=PROMO_BUTTONS_TELETHON
+            )
+
 
 async def process_telethon_album_later(key):
     await asyncio.sleep(3)
@@ -307,8 +359,7 @@ async def process_telethon_album_later(key):
 
 @telethon_client.on(events.NewMessage)
 async def telethon_new_message_handler(event):
-    config = load_config()
-    sources = config.get("sources", [])
+    sources = load_config().get("sources", [])
 
     if not sources:
         return
@@ -346,8 +397,7 @@ async def telethon_new_message_handler(event):
 
 
 async def retrieve_latest_media(limit_per_group=20):
-    config = load_config()
-    sources = config.get("sources", [])
+    sources = load_config().get("sources", [])
 
     for source in sources:
         try:
@@ -383,7 +433,7 @@ async def main():
     await bot_app.start()
     await bot_app.updater.start_polling()
 
-    print("MYWIN grouped media forwarder is running.")
+    print("MYWIN media forwarder with buttons is running.")
 
     await asyncio.Event().wait()
 
