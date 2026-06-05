@@ -43,7 +43,7 @@ CAPTION = """🎰 MYWIN 是你最值得信赖的线上娱乐平台
 PROMO_BUTTONS_BOT = InlineKeyboardMarkup([
     [
         InlineKeyboardButton(
-            "🎁 Claim 388% Bonus",
+            "🎁 Claim 388% Bonus ",
             url="https://www.mywin.asia"
         )
     ],
